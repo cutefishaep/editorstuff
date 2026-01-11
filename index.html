@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installer Setup</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FF6B6B, #556270);
+            /* Fallback */
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-color: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: black;
+            overflow: hidden;
+            color: var(--text-color);
+        }
+
+        /* Fluid Background */
+        .background-mesh {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 15% 50%, rgba(76, 29, 149, 0.8), transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(219, 39, 119, 0.6), transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.6), transparent 50%);
+            filter: blur(80px);
+            animation: breathe 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes breathe {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        .container {
+            background: rgba(25, 25, 25, 0.4);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            padding: 50px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            max-width: 480px;
+            width: 90%;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @keyframes fadeUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .apple-icon {
+            font-size: 48px;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin: 0 0 12px 0;
+            letter-spacing: -0.5px;
+        }
+
+        p {
+            font-size: 17px;
+            font-weight: 400;
+            margin: 0 0 32px 0;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-mac {
+            background: white;
+            color: black;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-mac:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 16px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-win {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-win:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+        }
+
+        .detecting {
+            margin-top: 30px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            height: 20px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Mobile Warning Styles */
+        .mobile-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .warning-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #FF6B6B;
+        }
+
+        .mobile-warning h2 {
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .mobile-warning p {
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 300px;
+        }
+
+        @media (max-width: 800px) {
+            .mobile-warning {
+                display: flex;
+            }
+
+            .container {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="background-mesh"></div>
+
+    <div class="container">
+        <i class="fa-brands fa-apple apple-icon"></i>
+        <h1>Setup Wizard</h1>
+        <p>Welcome. We'll optimize your environment based on your operating system.</p>
+
+        <div class="buttons">
+            <a href="mac.html" class="btn btn-mac"><i class="fa-brands fa-apple"></i> macOS</a>
+            <a href="win.html" class="btn btn-win"><i class="fa-brands fa-windows"></i> Windows</a>
+        </div>
+
+        <div class="detecting" id="status">
+            <div class="spinner"></div> Checking system...
+        </div>
+    </div>
+
+    <div class="mobile-warning">
+        <div class="warning-icon"><i class="fa-solid fa-desktop"></i></div>
+        <h2>Desktop Experience Required</h2>
+        <p>Please open this application on a computer/desktop with a wider screen.</p>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const platform = navigator.platform.toLowerCase();
+
+        setTimeout(() => {
+            if (platform.includes('mac')) {
+                statusDiv.innerHTML = "macOS detected. Redirecting...";
+                window.location.href = 'mac.html';
+            } else if (platform.includes('win')) {
+                statusDiv.innerHTML = "Windows detected. Redirecting...";
+                window.location.href = 'win.html';
+            } else {
+                statusDiv.innerHTML = "Please choose your OS.";
+            }
+        }, 1200);
+    </script>
+</body>
+
+</html>

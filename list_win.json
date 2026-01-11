@@ -1,0 +1,42 @@
+[
+    {
+        "id": 1,
+        "filename": "Adobe Photoshop 2024",
+        "category": "SOFTWARE",
+        "os_min": "10",
+        "size": "4.1 GB",
+        "link": "https://example.com/photoshop-win"
+    },
+    {
+        "id": 2,
+        "filename": "Visual Studio Code",
+        "category": "SOFTWARE",
+        "os_min": "10",
+        "size": "90 MB",
+        "link": "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user"
+    },
+    {
+        "id": 5,
+        "filename": "Serum Preset Pack",
+        "category": "PRESET",
+        "os_min": "7",
+        "size": "45 MB",
+        "link": "https://example.com/serum-presets"
+    },
+    {
+        "id": 8,
+        "filename": "Cinematic LUTs",
+        "category": "PRESET",
+        "os_min": "7",
+        "size": "110 MB",
+        "link": "https://example.com/luts"
+    },
+    {
+        "id": 9,
+        "filename": "FL Studio 2024",
+        "category": "SOFTWARE",
+        "os_min": "10",
+        "size": "850 MB",
+        "link": "https://example.com/flstudio"
+    }
+]

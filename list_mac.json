@@ -1,0 +1,58 @@
+[
+    {
+        "id": 1,
+        "filename": "Adobe Photoshop 2024",
+        "category": "SOFTWARE",
+        "os_min": "12",
+        "size": "4.2 GB",
+        "link": "https://example.com/photoshop-mac"
+    },
+    {
+        "id": 2,
+        "filename": "Visual Studio Code",
+        "category": "SOFTWARE",
+        "os_min": "10",
+        "size": "212 MB",
+        "link": "https://code.visualstudio.com/sha/download?build=stable&os=darwin-universal"
+    },
+    {
+        "id": 3,
+        "filename": "Waves Mercury",
+        "category": "PLUGIN",
+        "os_min": "11",
+        "size": "1.2 GB",
+        "link": "https://example.com/waves-mac"
+    },
+    {
+        "id": 4,
+        "filename": "Final Cut Pro",
+        "category": "SOFTWARE",
+        "os_min": "13",
+        "size": "5.6 GB",
+        "link": "https://example.com/fcp"
+    },
+    {
+        "id": 6,
+        "filename": "Slack",
+        "category": "SOFTWARE",
+        "os_min": "11",
+        "size": "190 MB",
+        "link": "https://slack.com/ssb/download-mac"
+    },
+    {
+        "id": 7,
+        "filename": "Valhalla VintageVerb",
+        "category": "PLUGIN",
+        "os_min": "12",
+        "size": "80 MB",
+        "link": "https://example.com/valhalla-mac"
+    },
+    {
+        "id": 10,
+        "filename": "Splice",
+        "category": "SOFTWARE",
+        "os_min": "14",
+        "size": "65 MB",
+        "link": "https://example.com/splice-mac"
+    }
+]
