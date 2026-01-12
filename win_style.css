@@ -630,6 +630,305 @@ input[type="checkbox"]:checked::after {
     justify-content: flex-end;
 }
 
+/* Elegant Horizontal Slider View for Windows */
+.preset-slider-container {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 80px;
+    /* More breathing room */
+    background: rgba(20, 20, 20, 0.4);
+    overflow: hidden;
+    user-select: none;
+}
+
+.preset-slider {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.preset-card-large {
+    width: 100%;
+    max-width: 860px;
+    height: 100%;
+    max-height: 480px;
+    background: rgba(32, 32, 32, 0.7);
+    backdrop-filter: blur(50px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    /* Win11 standard */
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+    transition: all 0.6s cubic-bezier(0.1, 0.9, 0.2, 1);
+    animation: winSliderIn 0.7s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+}
+
+.check-indicator {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 30px;
+    height: 30px;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+    z-index: 10;
+}
+
+.preset-card-large.selected .check-indicator {
+    opacity: 1;
+    transform: scale(1);
+}
+
+@keyframes winSliderIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.card-half-media {
+    width: 50%;
+    height: 100%;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card-half-media img,
+.card-half-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s ease;
+}
+
+.preset-card-large:hover .card-half-media img,
+.preset-card-large:hover .card-half-media video {
+    transform: scale(1.04);
+}
+
+.card-half-info {
+    width: 50%;
+    height: 100%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+}
+
+.preset-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.preset-card.selected {
+    background: rgba(0, 103, 192, 0.1);
+    border-color: #0067C0;
+}
+
+.selection-overlay {
+    position: absolute;
+    inset: 0;
+    border: 3px solid var(--accent-color);
+    border-radius: 8px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.preset-card-large.selected .selection-overlay {
+    opacity: 1;
+}
+
+.preset-card-large.selected {
+    background: rgba(0, 120, 212, 0.1);
+}
+
+.card-info {
+    padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    overflow: hidden;
+    justify-content: center;
+    color: #ffffff;
+}
+
+/* Custom Windows-style Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.info-item {
+    display: flex;
+    font-size: 13px;
+    gap: 16px;
+    line-height: 1.6;
+}
+
+.info-label {
+    color: rgba(255, 255, 255, 0.5);
+    width: 100px;
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+.info-value {
+    color: #ffffff;
+    font-weight: 400;
+}
+
+.card-name {
+    font-size: 32px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 24px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.02em;
+}
+
+/* Slider Navigation Arrows */
+.nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(45, 45, 45, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 20;
+    font-size: 24px;
+    backdrop-filter: blur(10px);
+}
+
+.nav-arrow:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.nav-arrow.left {
+    left: 16px;
+}
+
+.nav-arrow.right {
+    right: 16px;
+}
+
+.nav-arrow.disabled {
+    opacity: 0.2;
+    cursor: default;
+    pointer-events: none;
+}
+
+.card-meta {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.format-tag {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.selection-indicator {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 24px;
+    height: 24px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s;
+}
+
+.preset-card.selected .selection-indicator {
+    background: #0067C0;
+    border-color: #0067C0;
+}
+
+.preset-card.selected .selection-indicator::after {
+    content: "\e10b";
+    font-family: "Segoe Fluent Icons";
+    font-size: 10px;
+    color: white;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Mobile Warning */
 .mobile-warning {
     display: none;

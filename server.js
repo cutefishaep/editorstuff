@@ -60,9 +60,30 @@ app.post('/save', (req, res) => {
             console.error('Error writing file:', err);
             return res.status(500).json({ success: false, message: 'Failed to write file' });
         }
-        console.log(`Successfully updated ${filename}`);
         res.json({ success: true, message: `${filename} updated successfully!` });
     });
+});
+
+// API Endpoint to delete a file
+app.post('/delete-file', (req, res) => {
+    const { filePath } = req.body;
+    if (!filePath || !filePath.startsWith('/file/')) {
+        return res.status(400).json({ success: false, message: 'Invalid file path' });
+    }
+
+    const fullPath = path.join(__dirname, filePath);
+
+    if (fs.existsSync(fullPath)) {
+        fs.unlink(fullPath, (err) => {
+            if (err) {
+                console.error('Error deleting file:', err);
+                return res.status(500).json({ success: false, message: 'Failed to delete file' });
+            }
+            res.json({ success: true, message: 'File deleted successfully' });
+        });
+    } else {
+        res.status(404).json({ success: false, message: 'File not found' });
+    }
 });
 
 app.listen(PORT, () => {

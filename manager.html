@@ -799,6 +799,16 @@
                         <div class="file-info" id="file-info"></div>
                     </div>
                 </div>
+
+                <div class="form-row" id="preview-row" style="display:none;">
+                    <label>Upload Preview (Photo/Video)</label>
+                    <div class="dropzone" id="preview-dropzone" style="padding: 15px;">
+                        <i class="fa-solid fa-image" style="font-size: 20px;"></i>
+                        <p style="font-size: 10px;">Drag & Drop preview or <b>Click to Browse</b></p>
+                        <input type="file" id="f-preview" style="display:none;" accept="image/*,video/*">
+                        <div class="file-info" id="preview-info" style="font-size: 10px;"></div>
+                    </div>
+                </div>
                 <div class="form-row" id="instruction-row">
                     <label style="display:block; margin-bottom: 5px;">Installation Instruction</label>
                     <div id="win-templates" class="template-row" style="display:none;">
@@ -872,6 +882,7 @@
         let currentFilter = 'ALL';
         let downloadMode = 'link'; // 'link' or 'upload'
         let selectedFile = null;
+        let selectedPreviewFile = null;
 
         const navItems = document.querySelectorAll('.nav-item');
         const viewTitle = document.getElementById('view-title');
@@ -916,8 +927,54 @@
 
         function handleFileSelection(file) {
             selectedFile = file;
-            fileInfo.innerText = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            const sizeInMB = (file.size / 1024 / 1024).toFixed(2) + " MB";
+            fileInfo.innerText = `Selected: ${file.name} (${sizeInMB})`;
             fileInfo.style.display = 'block';
+
+            // Auto-populate size field
+            document.getElementById('f-size').value = sizeInMB;
+
+            if (currentType === 'presets') detectFormat(file.name);
+        }
+
+        // Preview Selection Logic
+        const previewDropzone = document.getElementById('preview-dropzone');
+        const previewInput = document.getElementById('f-preview');
+        const previewInfo = document.getElementById('preview-info');
+
+        if (previewDropzone) {
+            previewDropzone.onclick = () => previewInput.click();
+            previewDropzone.ondragover = (e) => { e.preventDefault(); previewDropzone.classList.add('dragover'); };
+            previewDropzone.ondragleave = () => previewDropzone.classList.remove('dragover');
+            previewDropzone.ondrop = (e) => {
+                e.preventDefault();
+                previewDropzone.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) handlePreviewSelection(e.dataTransfer.files[0]);
+            };
+        }
+
+        if (previewInput) {
+            previewInput.onchange = (e) => {
+                if (e.target.files.length > 0) handlePreviewSelection(e.target.files[0]);
+            };
+        }
+
+        function handlePreviewSelection(file) {
+            selectedPreviewFile = file;
+            previewInfo.innerText = `Preview: ${file.name}`;
+            previewInfo.style.display = 'block';
+        }
+
+        function detectFormat(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const categorySelect = document.getElementById('f-category');
+            if (ext === 'ffx') {
+                categorySelect.value = 'PRESET';
+            } else if (ext === 'aep') {
+                categorySelect.value = 'PROJECT';
+            } else if (ext === 'zip' || ext === '7z' || ext === 'rar') {
+                categorySelect.value = 'PACK';
+            }
         }
 
         function setDownloadMode(mode) {
@@ -927,13 +984,22 @@
 
             document.getElementById('link-input-group').classList.toggle('hidden-el', mode === 'upload');
             document.getElementById('upload-input-group').classList.toggle('hidden-el', mode === 'link');
+
+            // Toggle size visibility for presets: link needs manual size, upload gets it auto
+            if (currentType === 'presets') {
+                const sizeRow = document.querySelector('label[for="f-size"]').closest('.form-row');
+                sizeRow.style.display = (mode === 'link' ? 'block' : 'none');
+            }
         }
 
         function resetFormState() {
             setDownloadMode('link');
             selectedFile = null;
+            selectedPreviewFile = null;
             if (fileInfo) fileInfo.style.display = 'none';
             if (fileInput) fileInput.value = '';
+            if (previewInfo) previewInfo.style.display = 'none';
+            if (previewInput) previewInput.value = '';
         }
 
         // Section-specific configurations
@@ -965,14 +1031,15 @@
             presets: {
                 osLabel: 'Minimum (AE Version)',
                 osPlaceholder: 'e.g. CC 2020 / v24.0',
-                sizeLabel: 'Format',
-                sizePlaceholder: 'e.g. .ffx, .aep, .prpreset',
+                sizeLabel: 'Size',
+                sizePlaceholder: 'e.g. 10 MB',
                 categories: [
-                    { value: 'PRESET', label: 'Preset / Template' },
-                    { value: 'PACK', label: 'Asset Pack' },
-                    { value: 'TEMPLATE', label: 'Project Template' }
+                    { value: 'PRESET', label: 'Preset' },
+                    { value: 'PROJECT', label: 'Project Files' },
+                    { value: 'PACK', label: 'Archive pack' }
                 ],
-                showInstruction: false
+                showInstruction: false,
+                hideFormat: true
             }
         };
 
@@ -1037,7 +1104,7 @@
             // Update table headers based on section
             const thead = document.querySelector('table thead tr');
             if (isPreset) {
-                thead.innerHTML = '<th>Name</th><th>Category</th><th>Min (AE)</th><th>Format</th><th style="width: 100px;">Actions</th>';
+                thead.innerHTML = '<th>Name</th><th>Category</th><th>Min (AE)</th><th style="width: 100px;">Actions</th>';
             } else {
                 thead.innerHTML = '<th>Name</th><th>Category</th><th>OS / Info</th><th>Size</th><th style="width: 100px;">Actions</th>';
             }
@@ -1049,7 +1116,7 @@
                     <td style="font-weight:600">${item.filename}</td>
                     <td><span style="opacity:0.6; font-size:11px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">${item.category}</span></td>
                     <td>${item.os_min}</td>
-                    <td>${item.size || '-'}</td>
+                    ${isPreset ? '' : `<td>${item.size || '-'}</td>`}
                     <td>
                         <div class="action-btns">
                             <button title="Edit" class="edit-btn" onclick="openModal(${index})"><i class="fa-solid fa-pencil"></i></button>
@@ -1079,7 +1146,10 @@
             const sizeLabel = document.querySelector('label[for="f-size"]');
             const sizeInput = document.getElementById('f-size');
             sizeLabel.textContent = config.sizeLabel;
-            sizeInput.placeholder = config.sizePlaceholder;
+            const sizeRow = document.querySelector('label[for="f-size"]').closest('.form-row');
+
+            // Initial size visibility based on config
+            sizeRow.style.display = config.hideFormat ? 'none' : 'block';
 
             // Rebuild category dropdown
             const categorySelect = document.getElementById('f-category');
@@ -1113,14 +1183,25 @@
 
                 document.getElementById('f-instruction').value = item.instruction || "";
 
-                if (currentType === 'presets' && (Array.from(linkSet)[0] || "").startsWith('/file/')) {
+                // Improved Mode Detection for all types
+                const firstLink = Array.from(linkSet)[0] || "";
+                if (firstLink.startsWith('/file/')) {
                     setDownloadMode('upload');
-                    fileInfo.innerText = "Current File: " + (Array.from(linkSet)[0] || "").split('/').pop();
+                    fileInfo.innerText = "Current File: " + firstLink.split('/').pop();
                     fileInfo.style.display = 'block';
+                } else {
+                    setDownloadMode('link');
+                }
+
+                if (currentType === 'presets' && item.preview) {
+                    previewInfo.innerText = "Current Preview: " + item.preview.split('/').pop();
+                    previewInfo.style.display = 'block';
                 }
             } else {
                 document.getElementById('modal-title').innerText = "Add New Item";
             }
+
+            document.getElementById('preview-row').style.display = (currentType === 'presets' ? 'block' : 'none');
 
             const instRow = document.getElementById('instruction-row');
             if (config.showInstruction) {
@@ -1182,10 +1263,14 @@
             const size = document.getElementById('f-size').value;
             let link = document.getElementById('f-link').value;
             const instruction = document.getElementById('f-instruction').value;
+            let originalName = editingIndex > -1 ? (dataMap[currentType][editingIndex].originalName || "") : "";
 
-            if (!name || !os || !size) return alert("Fill required fields");
+            // Validation: Size is optional for Presets if uploading (auto-populated)
+            const isSizeRequired = currentType !== 'presets' || downloadMode === 'link';
+            if (!name || !os || (isSizeRequired && !size)) return alert("Fill required fields");
 
-            if (currentType === 'presets' && downloadMode === 'upload' && selectedFile) {
+            if (downloadMode === 'upload' && selectedFile) {
+                originalName = selectedFile.name; // Store original name
                 const formData = new FormData();
                 formData.append('file', selectedFile);
 
@@ -1206,6 +1291,20 @@
                 }
             }
 
+            let previewUrl = editingIndex > -1 ? dataMap[currentType][editingIndex].preview : "";
+            if (currentType === 'presets' && selectedPreviewFile) {
+                const formData = new FormData();
+                formData.append('file', selectedPreviewFile);
+                try {
+                    showToast("Uploading preview...");
+                    const res = await fetch('/upload', { method: 'POST', body: formData });
+                    const resData = await res.json();
+                    if (resData.success) previewUrl = resData.filePath;
+                } catch (e) {
+                    console.error("Preview upload failed", e);
+                }
+            }
+
             // NEW: Parse multiple links separated by spaces
             const linkArr = link.split(/\s+/).filter(l => l.trim() !== "");
 
@@ -1215,8 +1314,10 @@
                 category: cat,
                 os_min: os,
                 size: size,
-                instruction: instruction
+                instruction: instruction,
+                originalName: originalName
             };
+            if (currentType === 'presets') item.preview = previewUrl;
 
             // STRICT: Dynamically add link1, link2, etc. ONLY
             linkArr.forEach((url, i) => {
@@ -1235,12 +1336,35 @@
             showToast("Item saved locally");
         }
 
-        function deleteItem(index) {
-            if (confirm("Permanently delete this item?")) {
+        async function deleteItem(index) {
+            const item = dataMap[currentType][index];
+            if (confirm(`Permanently delete "${item.filename}"? This will also remove any uploaded files on the server.`)) {
+                // Find all uploaded files (main files and previews)
+                const filesToDelete = [];
+                Object.keys(item).forEach(key => {
+                    const val = item[key];
+                    if (typeof val === 'string' && val.startsWith('/file/')) {
+                        filesToDelete.push(val);
+                    }
+                });
+
+                // Delete each file from server
+                for (const filePath of filesToDelete) {
+                    try {
+                        await fetch('/delete-file', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ filePath })
+                        });
+                    } catch (e) {
+                        console.error("Cleanup failed:", e);
+                    }
+                }
+
                 dataMap[currentType].splice(index, 1);
                 render();
                 localStorage.setItem('editorstuff_data', JSON.stringify(dataMap));
-                showToast("Item deleted");
+                showToast("Item and files deleted");
             }
         }
 

@@ -1,114 +1,191 @@
-document.addEventListener('DOMContentLoaded', () => {
+(function () {
     const listContainer = document.getElementById('list-container');
-    const selectedCountSpan = document.getElementById('selected-count');
-    const menuItems = document.querySelectorAll('.sidebar .menu-item');
+    const selectedCount = document.getElementById('selected-count');
     const searchInput = document.getElementById('search-input');
+    const menuItems = document.querySelectorAll('.menu-item');
+    const confirmBtn = document.getElementById('confirm-btn');
 
     let softwareList = [];
-    let currentCategory = 'SOFTWARE'; // Default category
+    let currentCategory = 'SOFTWARE';
     let searchQuery = '';
+    let currentSlideIndex = 0;
 
     const osMapping = {
         "10": "High Sierra",
+        "10.13": "High Sierra",
+        "10.14": "Mojave",
+        "10.15": "Catalina",
         "11": "Big Sur",
         "12": "Monterey",
         "13": "Ventura",
         "14": "Sonoma",
-        "15": "Sequoia",
-        "Win": "Windows"
+        "15": "Sequoia"
     };
 
-    function getOsDisplay(os) {
-        return osMapping[os] || `macOS ${os}`;
+    function getOsDisplay(minOs) {
+        return osMapping[minOs] || `macOS ${minOs}+`;
     }
 
-    // Fetch data from list_mac.json and list_presets.json
+    // Load Data
     Promise.all([
         fetch('list_mac.json').then(res => res.json()),
         fetch('list_presets.json').then(res => res.json())
     ])
         .then(([macData, presetData]) => {
-            // Filter out any presets that might still be in the mac list (just in case)
             const filteredMac = macData.filter(item => item.category !== 'PRESET');
-            softwareList = [...filteredMac, ...presetData].map(item => ({ ...item, selected: false }));
+            softwareList = [...filteredMac, ...presetData].map(item => ({
+                ...item,
+                id: String(item.id),
+                selected: false
+            }));
             renderList();
         })
-        .catch(error => console.error('Error loading lists:', error));
+        .catch(err => console.error('Data load error:', err));
+
+    function getFilteredList() {
+        return softwareList.filter(item => {
+            const matchesSearch = item.filename.toLowerCase().includes(searchQuery.toLowerCase());
+            if (searchQuery) return matchesSearch;
+
+            if (currentCategory === 'PRESET') {
+                return ['PRESET', 'PROJECT', 'PACK'].includes(item.category);
+            }
+            return item.category === currentCategory;
+        });
+    }
 
     function renderList() {
+        if (!listContainer) return;
         listContainer.innerHTML = '';
+        const filteredList = getFilteredList();
         const isPreset = currentCategory === 'PRESET' && !searchQuery;
 
-        // Update headers in mac.html dynamically
         const listHeader = document.querySelector('.list-header');
+        if (!listHeader) return;
+
         if (isPreset) {
-            listHeader.innerHTML = `
-                <div class="col-checkbox"><input type="checkbox" id="select-all"></div>
-                <div class="col-name">Name</div>
-                <div class="col-os">Min (AE)</div>
-                <div class="col-size">Format</div>
-            `;
+            listHeader.style.display = 'none';
+            listContainer.className = 'preset-slider-container';
+
+            if (filteredList.length === 0) {
+                listContainer.innerHTML = '<div style="color:var(--text-secondary); padding:20px;">No presets found.</div>';
+            } else {
+                if (currentSlideIndex >= filteredList.length) currentSlideIndex = 0;
+                const item = filteredList[currentSlideIndex];
+
+                const isVideo = item.preview && (item.preview.endsWith('.mp4') || item.preview.endsWith('.webm'));
+                const previewHtml = item.preview ? (
+                    isVideo ? `<video src="${item.preview}" muted loop onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>`
+                        : `<img src="${item.preview}" alt="${item.filename}">`
+                ) : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1a1a1a;"><i class="fa-solid fa-file-presets" style="font-size:80px; color:rgba(255,255,255,0.05)"></i></div>`;
+
+                const sliderHtml = `
+                    <button class="nav-arrow left ${currentSlideIndex === 0 ? 'disabled' : ''}" id="prev-slide">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <div class="slider-content">
+                        <div class="preset-card-large ${item.selected ? 'selected' : ''}" id="current-card">
+                            <div class="selection-overlay"></div>
+                            <div class="check-indicator"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="card-half-media">${previewHtml}</div>
+                            <div class="card-half-info">
+                                <div class="card-title-large">${item.filename}</div>
+                                <div class="info-grid-large">
+                                    <div class="info-row-large">
+                                        <span class="label">Min (AE)</span>
+                                        <span class="value">AE ${item.os_min}</span>
+                                    </div>
+                                    <div class="info-row-large">
+                                        <span class="label">Size</span>
+                                        <span class="value">${item.size || '-'}</span>
+                                    </div>
+                                    <div class="info-row-large">
+                                        <span class="label">Type</span>
+                                        <span class="value">${(item.originalName || "").split('.').pop().toUpperCase() || 'ZIP'}</span>
+                                    </div>
+                                    <div class="info-row-large">
+                                        <span class="label">Category</span>
+                                        <span class="value">${item.category}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="nav-arrow right ${currentSlideIndex === filteredList.length - 1 ? 'disabled' : ''}" id="next-slide">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                `;
+
+                listContainer.innerHTML = sliderHtml;
+
+                // Navigation Logic
+                document.getElementById('prev-slide').onclick = (e) => {
+                    e.stopPropagation();
+                    if (currentSlideIndex > 0) {
+                        currentSlideIndex--;
+                        renderList();
+                    }
+                };
+                document.getElementById('next-slide').onclick = (e) => {
+                    e.stopPropagation();
+                    if (currentSlideIndex < filteredList.length - 1) {
+                        currentSlideIndex++;
+                        renderList();
+                    }
+                };
+                document.getElementById('current-card').onclick = () => {
+                    toggleItem(item.id, !item.selected);
+                };
+            }
         } else {
+            listHeader.style.display = 'grid';
+            listContainer.className = 'list-container';
             listHeader.innerHTML = `
                 <div class="col-checkbox"><input type="checkbox" id="select-all"></div>
                 <div class="col-name">Name</div>
                 <div class="col-os">Min OS</div>
                 <div class="col-size">Size</div>
             `;
-        }
 
-        const filteredList = softwareList.filter(item => {
-            if (searchQuery) {
-                return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
-            } else {
-                return item.category === currentCategory;
+            const selectAllBtn = document.getElementById('select-all');
+            if (selectAllBtn) {
+                const allSelected = filteredList.length > 0 && filteredList.every(i => i.selected);
+                selectAllBtn.checked = allSelected;
+                const someSelected = filteredList.some(i => i.selected);
+                selectAllBtn.indeterminate = someSelected && !allSelected;
+
+                selectAllBtn.onclick = (e) => {
+                    const isChecked = e.target.checked;
+                    filteredList.forEach(item => item.selected = isChecked);
+                    renderList();
+                };
             }
-        });
 
-        // Re-bind Select All logic every time header is rendered
-        const selectAllBtn = document.getElementById('select-all');
-        if (selectAllBtn) {
-            const allSelected = filteredList.length > 0 && filteredList.every(i => i.selected);
-            selectAllBtn.checked = allSelected;
-            const someSelected = filteredList.some(i => i.selected);
-            selectAllBtn.indeterminate = someSelected && !allSelected;
+            filteredList.forEach(item => {
+                const row = document.createElement('div');
+                row.className = `list-row ${item.selected ? 'selected' : ''}`;
+                row.innerHTML = `
+                    <div class="col-checkbox"><input type="checkbox" class="item-checkbox" data-id="${item.id}" ${item.selected ? 'checked' : ''}></div>
+                    <div class="col-name">${item.filename}</div>
+                    <div class="col-os">${getOsDisplay(item.os_min)}</div>
+                    <div class="col-size">${item.size}</div>
+                `;
 
-            selectAllBtn.onchange = (e) => {
-                const isChecked = e.target.checked;
-                filteredList.forEach(item => item.selected = isChecked);
-                renderList();
-            };
+                row.onclick = (e) => {
+                    if (e.target.type !== 'checkbox') {
+                        toggleItem(item.id, !item.selected);
+                    }
+                };
+
+                const checkbox = row.querySelector('.item-checkbox');
+                checkbox.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleItem(item.id, e.target.checked);
+                };
+
+                listContainer.appendChild(row);
+            });
         }
-
-        filteredList.forEach((item) => {
-            const row = document.createElement('div');
-            row.className = `list-row ${item.selected ? 'selected' : ''}`;
-
-            row.innerHTML = `
-                <div class="col-checkbox">
-                    <input type="checkbox" class="item-checkbox" data-id="${item.id}" ${item.selected ? 'checked' : ''}>
-                </div>
-                <div class="col-name">${item.filename}</div>
-                <div class="col-os">${isPreset ? item.os_min : getOsDisplay(item.os_min)}</div>
-                <div class="col-size">${item.size}</div>
-            `;
-
-            row.addEventListener('click', (e) => {
-                if (e.target.type !== 'checkbox') {
-                    const checkbox = row.querySelector('.item-checkbox');
-                    checkbox.checked = !checkbox.checked;
-                    toggleItem(item.id, checkbox.checked);
-                }
-            });
-
-            const checkbox = row.querySelector('.item-checkbox');
-            checkbox.addEventListener('change', (e) => {
-                toggleItem(item.id, e.target.checked);
-            });
-
-            listContainer.appendChild(row);
-        });
-
         updateSummary();
     }
 
@@ -116,222 +193,124 @@ document.addEventListener('DOMContentLoaded', () => {
         const item = softwareList.find(i => i.id === id);
         if (item) {
             item.selected = isSelected;
-            const checkbox = document.querySelector(`.item-checkbox[data-id="${id}"]`);
-            if (checkbox) {
-                const row = checkbox.closest('.list-row');
-                if (row) {
-                    if (isSelected) row.classList.add('selected');
-                    else row.classList.remove('selected');
-                    checkbox.checked = isSelected;
-                }
-            }
+            renderList();
         }
-        updateSummary();
-        renderList(); // Re-render to update Select All state and row highlights
     }
 
     function updateSummary() {
-        const count = softwareList.filter(i => i.selected).length;
-        selectedCountSpan.textContent = count;
+        if (selectedCount) {
+            const count = softwareList.filter(i => i.selected).length;
+            selectedCount.textContent = count;
+        }
     }
 
-    // Sidebar Filtering Logic
     menuItems.forEach(item => {
-        item.addEventListener('click', () => {
+        item.onclick = () => {
             menuItems.forEach(m => m.classList.remove('active'));
             item.classList.add('active');
             currentCategory = item.getAttribute('data-category');
+            currentSlideIndex = 0;
             renderList();
-        });
+        };
     });
 
-    // Search Logic
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
+        searchInput.oninput = (e) => {
             searchQuery = e.target.value.trim();
+            currentSlideIndex = 0;
             renderList();
-        });
+        };
     }
-
-    // Support Dark mode toggle via shortcut or just keep as user might have liked it.
-    // User requested dark mode previously. I'll remove the settings button reliance 
-    // since I replaced that menu item, or I can add a dedicated toggle later.
-    // For now, I'll allow clicking the traffic light green to toggle dark mode as an 'easter egg' or just keep it system-pref only.
-    // Actually, I'll just remove the JS toggle for now unless user asks back, focusing on the requested categories.
-    // Or I can put dark mode toggle on the green traffic light:
-    const greenLight = document.querySelector('.light.green');
-    if (greenLight) {
-        greenLight.style.cursor = 'pointer';
-        greenLight.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-        });
-    }
-    // Confirm Button Logic
-    const confirmBtn = document.getElementById('confirm-btn');
-    const downloadOverlay = document.getElementById('download-overlay');
-    const downloadList = document.getElementById('download-list');
-    const closeDownloadBtn = document.getElementById('close-download-btn');
-    const closeDownloadX = document.getElementById('close-download-x');
 
     if (confirmBtn) {
-        confirmBtn.addEventListener('click', () => {
-            const selectedItems = softwareList.filter(i => i.selected);
-            if (selectedItems.length === 0) {
-                alert('Please select at least one item.');
-                return;
+        confirmBtn.onclick = () => {
+            const selected = softwareList.filter(i => i.selected);
+            if (selected.length === 0) return;
+            showDownloadModal(selected);
+        };
+    }
+
+    function showDownloadModal(items) {
+        const overlay = document.getElementById('download-overlay');
+        const list = document.getElementById('download-list');
+        if (!list || !overlay) return;
+
+        list.innerHTML = '';
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'download-item';
+
+            let linksHtml = '';
+            for (let i = 1; i <= 10; i++) {
+                const link = item[`link${i}`];
+                if (link) {
+                    linksHtml += `<button class="btn-primary mini" onclick="window.open('${link}', '_blank')">Mirror ${i}</button>`;
+                }
             }
 
-            // Populate Download Window
-            downloadList.innerHTML = '';
-            selectedItems.forEach(item => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'download-item';
-
-                let buttonsHtml = '';
-                const links = [];
-
-                Object.keys(item).forEach(key => {
-                    if (/^link\d+$/.test(key)) {
-                        const num = key.replace('link', '');
-                        links.push({ url: item[key], label: `Mirror ${num}` });
-                    }
-                });
-
-                if (links.length === 0 && item.link) {
-                    links.push({ url: item.link, label: 'Mirror 1' });
-                }
-
-                links.sort((a, b) => {
-                    const numA = parseInt(a.label.replace('Mirror ', ''));
-                    const numB = parseInt(b.label.replace('Mirror ', ''));
-                    return numA - numB;
-                });
-
-                links.forEach(l => {
-                    buttonsHtml += `
-                            <a href="${l.url}" target="_blank" style="text-decoration:none;">
-                                <button class="btn-primary d-btn" style="min-width: auto; padding: 4px 12px;">${l.label}</button>
-                            </a>
-                        `;
-                });
-
-                // Add instruction button if it exists and is not a preset
-                let instructionHtml = '';
-                if (item.instruction && item.instruction.trim() !== '' && item.category !== 'PRESET') {
-                    const instKey = `inst_${item.id}`;
-                    if (!window.instructionData) window.instructionData = {};
-                    window.instructionData[instKey] = {
-                        name: item.filename,
-                        text: item.instruction
-                    };
-
-                    instructionHtml = `
-                        <button class="btn-secondary d-btn" style="border-color: var(--accent-color); color: var(--accent-color);" 
-                            onclick="showInstruction('${instKey}')">
-                            How to Install?
-                        </button>
-                    `;
-                }
-
-                itemDiv.innerHTML = `
-                        <div class="d-name">${item.filename}</div>
-                        <div style="display:flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; align-items: center;">
-                            ${instructionHtml}
-                            ${buttonsHtml}
-                        </div>
-                    `;
-                downloadList.appendChild(itemDiv);
-            });
-
-            // Show Overlay (Modal) - Do not hide main window
-            if (downloadOverlay) downloadOverlay.style.display = 'flex';
+            div.innerHTML = `
+                <div class="dl-info">
+                   <div class="dl-name">${item.filename}</div>
+                   <div class="dl-meta" style="font-size: 11px; color: var(--text-secondary);">${item.size} • Mac</div>
+                </div>
+                <div class="dl-actions" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: 60%;">
+                    <button class="btn-secondary mini" onclick="showInstruction('${item.id}')"><i class="fa-solid fa-circle-info"></i> Guide</button>
+                    ${linksHtml}
+                </div>
+            `;
+            list.appendChild(div);
         });
-    }
-
-    // Close Modal Logic
-    function closeModal() {
-        if (downloadOverlay) downloadOverlay.style.display = 'none';
-    }
-
-    if (closeDownloadBtn) {
-        closeDownloadBtn.addEventListener('click', closeModal);
-    }
-
-    if (closeDownloadX) {
-        closeDownloadX.style.cursor = 'pointer';
-        closeDownloadX.addEventListener('click', closeModal);
-    }
-
-    // Copy Password Logic
-    const copyPassBtn = document.getElementById('copy-pass-btn-mac');
-    if (copyPassBtn) {
-        copyPassBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText('EDITINGSTUFF').then(() => {
-                const originalIcon = copyPassBtn.innerHTML;
-                copyPassBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                setTimeout(() => {
-                    copyPassBtn.innerHTML = originalIcon;
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
-            });
-        });
-    }
-
-    // Instruction Helper
-    window.showInstruction = (key) => {
-        const data = (window.instructionData || {})[key];
-        if (!data) return;
-
-        const overlay = document.getElementById('instruction-overlay');
-        const title = document.getElementById('mac-inst-title');
-        const content = document.getElementById('mac-inst-content');
-
-        title.innerText = data.name;
-        content.innerText = data.text;
         overlay.style.display = 'flex';
+    }
+
+    window.showInstruction = function (id) {
+        const item = softwareList.find(i => i.id === String(id));
+        if (!item) return;
+        document.getElementById('mac-inst-title').textContent = item.filename + ' Guide';
+        document.getElementById('mac-inst-content').innerText = item.instructions || item.instruction || 'No instructions available.';
+        document.getElementById('instruction-overlay').style.display = 'flex';
     };
 
-    window.closeInstruction = () => {
+    window.closeInstruction = function () {
         document.getElementById('instruction-overlay').style.display = 'none';
     };
-    // Window Management Logic
-    const windowEl = document.querySelector('.window-container');
-    const redLight = document.querySelector('.traffic-lights .light.red');
-    const yellowLight = document.querySelector('.traffic-lights .light.yellow');
-    const greenLightTraffic = document.querySelector('.traffic-lights .light.green');
+
+    const closeDlBtn = document.getElementById('close-download-btn');
+    if (closeDlBtn) closeDlBtn.onclick = () => document.getElementById('download-overlay').style.display = 'none';
+
+    const closeDlX = document.getElementById('close-download-x');
+    if (closeDlX) closeDlX.onclick = () => document.getElementById('download-overlay').style.display = 'none';
+
+    const copyBtn = document.getElementById('copy-pass-btn-mac');
+    if (copyBtn) {
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText('EDITINGSTUFF');
+            const icon = copyBtn.querySelector('i');
+            icon.className = 'fa-solid fa-check';
+            setTimeout(() => icon.className = 'fa-regular fa-clipboard', 2000);
+        };
+    }
+
+    // Window Controls Logic
+    const windowContainer = document.querySelector('.window-container');
+    const closeLight = document.querySelector('.light.red');
+    const minimizeLight = document.querySelector('.light.yellow');
+    const maximizeLight = document.querySelector('.light.green');
+    const restoreBtn = document.getElementById('restore-mac-btn');
     const dock = document.getElementById('mac-dock');
-    const restoreBtnMac = document.getElementById('restore-mac-btn');
 
-    if (redLight) {
-        redLight.style.cursor = 'pointer';
-        redLight.addEventListener('click', () => {
-            location.href = 'index.html';
-        });
+    if (closeLight) closeLight.onclick = () => location.href = 'index.html';
+    if (minimizeLight) {
+        minimizeLight.onclick = () => {
+            windowContainer.classList.add('minimized');
+            if (dock) dock.classList.add('active');
+        };
     }
-
-    if (yellowLight) {
-        yellowLight.style.cursor = 'pointer';
-        yellowLight.addEventListener('click', () => {
-            windowEl.classList.add('minimized');
-            dock.classList.add('active');
-            // Hide overlays
-            if (downloadOverlay) downloadOverlay.style.display = 'none';
-            document.getElementById('instruction-overlay').style.display = 'none';
-        });
+    if (maximizeLight) maximizeLight.onclick = () => windowContainer.classList.toggle('maximized');
+    if (restoreBtn) {
+        restoreBtn.onclick = () => {
+            windowContainer.classList.remove('minimized');
+            if (dock) dock.classList.remove('active');
+        };
     }
-
-    if (greenLightTraffic) {
-        greenLightTraffic.style.cursor = 'pointer';
-        greenLightTraffic.addEventListener('click', () => {
-            windowEl.classList.toggle('maximized');
-        });
-    }
-
-    if (restoreBtnMac) {
-        restoreBtnMac.addEventListener('click', () => {
-            windowEl.classList.remove('minimized');
-            dock.classList.remove('active');
-        });
-    }
-});
+})();
