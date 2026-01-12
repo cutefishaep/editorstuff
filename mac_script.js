@@ -23,17 +23,75 @@ document.addEventListener('DOMContentLoaded', () => {
         return osMapping[os] || `macOS ${os}`;
     }
 
-    // Fetch data from list_mac.json
-    fetch('list_mac.json')
-        .then(response => response.json())
-        .then(data => {
-            softwareList = data.map(item => ({ ...item, selected: false }));
+    // Fetch data from list_mac.json and list_presets.json
+    Promise.all([
+        fetch('list_mac.json').then(res => res.json()),
+        fetch('list_presets.json').then(res => res.json())
+    ])
+        .then(([macData, presetData]) => {
+            // Filter out any presets that might still be in the mac list (just in case)
+            const filteredMac = macData.filter(item => item.category !== 'PRESET');
+            softwareList = [...filteredMac, ...presetData].map(item => ({ ...item, selected: false }));
             renderList();
         })
-        .catch(error => console.error('Error loading list:', error));
+        .catch(error => console.error('Error loading lists:', error));
 
     function renderList() {
         listContainer.innerHTML = '';
+        const isPreset = currentCategory === 'PRESET' && !searchQuery;
+
+        // Update headers in mac.html dynamically
+        const listHeader = document.querySelector('.list-header');
+        if (isPreset) {
+            listHeader.innerHTML = `
+                <div class="col-checkbox"><input type="checkbox" id="select-all-header"></div>
+                <div class="col-name">Name</div>
+                <div class="col-os">Min (AE)</div>
+                <div class="col-size">Format</div>
+            `;
+            // Re-bind select-all-header if needed, or just let the main select-all handle it.
+            // Actually, the main selectAllCheckbox is outside, but the header column classes might change.
+            // The original had a static select-all. Let's keep the ID but in the new structure.
+            const newSelectAll = listHeader.querySelector('#select-all-header');
+            if (newSelectAll) {
+                newSelectAll.addEventListener('change', (e) => {
+                    const isChecked = e.target.checked;
+                    const currentViewList = softwareList.filter(item => {
+                        if (searchQuery) return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
+                        return item.category === currentCategory;
+                    });
+                    currentViewList.forEach(item => item.selected = isChecked);
+                    renderList();
+                });
+                updateSelectAllState(softwareList.filter(item => {
+                    if (searchQuery) return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
+                    return item.category === currentCategory;
+                }), newSelectAll);
+            }
+        } else {
+            listHeader.innerHTML = `
+                <div class="col-checkbox"><input type="checkbox" id="select-all-header"></div>
+                <div class="col-name">Name</div>
+                <div class="col-os">Min OS</div>
+                <div class="col-size">Size</div>
+            `;
+            const newSelectAll = listHeader.querySelector('#select-all-header');
+            if (newSelectAll) {
+                newSelectAll.addEventListener('change', (e) => {
+                    const isChecked = e.target.checked;
+                    const currentViewList = softwareList.filter(item => {
+                        if (searchQuery) return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
+                        return item.category === currentCategory;
+                    });
+                    currentViewList.forEach(item => item.selected = isChecked);
+                    renderList();
+                });
+                updateSelectAllState(softwareList.filter(item => {
+                    if (searchQuery) return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
+                    return item.category === currentCategory;
+                }), newSelectAll);
+            }
+        }
 
         const filteredList = softwareList.filter(item => {
             // Flexible Search: If query exists, search everything. If empty, respect category.
@@ -54,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="col-name">${item.filename}</div>
                 <!-- Category column removed as requested -->
-                <div class="col-os">${getOsDisplay(item.os_min)}</div>
+                <div class="col-os">${isPreset ? item.os_min : getOsDisplay(item.os_min)}</div>
                 <div class="col-size">${item.size}</div>
             `;
 
@@ -165,10 +223,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // Confirm Button Logic
     const confirmBtn = document.getElementById('confirm-btn');
-    const mainWindow = document.querySelector('.window-container:not(.download-window)');
-    const downloadWindow = document.getElementById('download-window');
+    const downloadOverlay = document.getElementById('download-overlay');
     const downloadList = document.getElementById('download-list');
-    const closeDownloadBtn = document.getElementById('close-download');
+    const closeDownloadBtn = document.getElementById('close-download-btn');
+    const closeDownloadX = document.getElementById('close-download-x');
 
     if (confirmBtn) {
         confirmBtn.addEventListener('click', () => {
@@ -184,25 +242,151 @@ document.addEventListener('DOMContentLoaded', () => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'download-item';
 
+                let buttonsHtml = '';
+                const links = [];
+
+                Object.keys(item).forEach(key => {
+                    if (/^link\d+$/.test(key)) {
+                        const num = key.replace('link', '');
+                        links.push({ url: item[key], label: `Mirror ${num}` });
+                    }
+                });
+
+                if (links.length === 0 && item.link) {
+                    links.push({ url: item.link, label: 'Mirror 1' });
+                }
+
+                links.sort((a, b) => {
+                    const numA = parseInt(a.label.replace('Mirror ', ''));
+                    const numB = parseInt(b.label.replace('Mirror ', ''));
+                    return numA - numB;
+                });
+
+                links.forEach(l => {
+                    buttonsHtml += `
+                            <a href="${l.url}" target="_blank" style="text-decoration:none;">
+                                <button class="btn-primary d-btn" style="min-width: auto; padding: 4px 12px;">${l.label}</button>
+                            </a>
+                        `;
+                });
+
+                // Add instruction button if it exists and is not a preset
+                let instructionHtml = '';
+                if (item.instruction && item.instruction.trim() !== '' && item.category !== 'PRESET') {
+                    const instKey = `inst_${item.id}`;
+                    if (!window.instructionData) window.instructionData = {};
+                    window.instructionData[instKey] = {
+                        name: item.filename,
+                        text: item.instruction
+                    };
+
+                    instructionHtml = `
+                        <button class="btn-secondary d-btn" style="border-color: var(--accent-color); color: var(--accent-color);" 
+                            onclick="showInstruction('${instKey}')">
+                            How to Install?
+                        </button>
+                    `;
+                }
+
                 itemDiv.innerHTML = `
-                    <div class="d-name">${item.filename}</div>
-                    <a href="${item.link}" target="_blank" style="text-decoration:none;">
-                        <button class="btn-primary d-btn">Download</button>
-                    </a>
-                `;
+                        <div class="d-name">${item.filename}</div>
+                        <div style="display:flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; align-items: center;">
+                            ${instructionHtml}
+                            ${buttonsHtml}
+                        </div>
+                    `;
                 downloadList.appendChild(itemDiv);
             });
 
-            // Switch Windows
-            mainWindow.style.display = 'none';
-            downloadWindow.style.display = 'flex';
+            // Show Overlay (Modal) - Do not hide main window
+            if (downloadOverlay) downloadOverlay.style.display = 'flex';
         });
     }
 
+    // Close Modal Logic
+    function closeModal() {
+        if (downloadOverlay) downloadOverlay.style.display = 'none';
+    }
+
     if (closeDownloadBtn) {
-        closeDownloadBtn.addEventListener('click', () => {
-            downloadWindow.style.display = 'none';
-            mainWindow.style.display = 'flex';
+        closeDownloadBtn.addEventListener('click', closeModal);
+    }
+
+    if (closeDownloadX) {
+        closeDownloadX.style.cursor = 'pointer';
+        closeDownloadX.addEventListener('click', closeModal);
+    }
+
+    // Copy Password Logic
+    const copyPassBtn = document.getElementById('copy-pass-btn-mac');
+    if (copyPassBtn) {
+        copyPassBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText('EDITINGSTUFF').then(() => {
+                const originalIcon = copyPassBtn.innerHTML;
+                copyPassBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                setTimeout(() => {
+                    copyPassBtn.innerHTML = originalIcon;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        });
+    }
+
+    // Instruction Helper
+    window.showInstruction = (key) => {
+        const data = (window.instructionData || {})[key];
+        if (!data) return;
+
+        const overlay = document.getElementById('instruction-overlay');
+        const title = document.getElementById('mac-inst-title');
+        const content = document.getElementById('mac-inst-content');
+
+        title.innerText = data.name;
+        content.innerText = data.text;
+        overlay.style.display = 'flex';
+    };
+
+    window.closeInstruction = () => {
+        document.getElementById('instruction-overlay').style.display = 'none';
+    };
+    // Window Management Logic
+    const windowEl = document.querySelector('.window-container');
+    const redLight = document.querySelector('.traffic-lights .light.red');
+    const yellowLight = document.querySelector('.traffic-lights .light.yellow');
+    const greenLightTraffic = document.querySelector('.traffic-lights .light.green');
+    const dock = document.getElementById('mac-dock');
+    const restoreBtnMac = document.getElementById('restore-mac-btn');
+
+    if (redLight) {
+        redLight.style.cursor = 'pointer';
+        redLight.addEventListener('click', () => {
+            location.href = 'index.html';
+        });
+    }
+
+    if (yellowLight) {
+        yellowLight.style.cursor = 'pointer';
+        yellowLight.addEventListener('click', () => {
+            windowEl.classList.add('minimized');
+            dock.classList.add('active');
+            // Hide overlays
+            if (downloadOverlay) downloadOverlay.style.display = 'none';
+            document.getElementById('instruction-overlay').style.display = 'none';
+        });
+    }
+
+    if (greenLightTraffic) {
+        greenLightTraffic.style.cursor = 'pointer';
+        greenLightTraffic.addEventListener('click', () => {
+            windowEl.classList.toggle('maximized');
+        });
+    }
+
+    if (restoreBtnMac) {
+        restoreBtnMac.addEventListener('click', () => {
+            windowEl.classList.remove('minimized');
+            dock.classList.remove('active');
         });
     }
 });

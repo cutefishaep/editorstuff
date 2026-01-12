@@ -78,7 +78,7 @@
             }
         }
 
-        .apple-icon {
+        .hero-icon {
             font-size: 48px;
             margin-bottom: 24px;
             background: linear-gradient(135deg, #fff, #aaa);
@@ -174,46 +174,32 @@
             }
         }
 
-        /* Mobile Warning Styles */
-        .mobile-warning {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            z-index: 9999;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .warning-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-            color: #FF6B6B;
-        }
-
-        .mobile-warning h2 {
-            margin-bottom: 10px;
-            color: white;
-        }
-
-        .mobile-warning p {
-            color: rgba(255, 255, 255, 0.7);
-            max-width: 300px;
-        }
-
-        @media (max-width: 800px) {
-            .mobile-warning {
-                display: flex;
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+                width: 95%;
             }
 
-            .container {
-                display: none !important;
+            h1 {
+                font-size: 26px;
+            }
+
+            p {
+                font-size: 15px;
+                margin-bottom: 24px;
+            }
+
+            .buttons {
+                flex-direction: column;
+                align-items: stretch;
+                width: 100%;
+            }
+
+            .btn {
+                padding: 16px;
+                font-size: 16px;
+                /* Larger touch target */
+                justify-content: center;
             }
         }
     </style>
@@ -224,7 +210,7 @@
     <div class="background-mesh"></div>
 
     <div class="container">
-        <i class="fa-brands fa-apple apple-icon"></i>
+        <i class="fa-solid fa-screwdriver-wrench hero-icon"></i>
         <h1>Setup Wizard</h1>
         <p>Welcome. We'll optimize your environment based on your operating system.</p>
 
@@ -238,11 +224,14 @@
         </div>
     </div>
 
-    <div class="mobile-warning">
-        <div class="warning-icon"><i class="fa-solid fa-desktop"></i></div>
-        <h2>Desktop Experience Required</h2>
-        <p>Please open this application on a computer/desktop with a wider screen.</p>
-    </div>
+    <footer
+        style="position: absolute; bottom: 20px; width: 100%; text-align: center; font-size: 12px; color: rgba(255,255,255,0.3);">
+        <a href="manager.html" style="color: inherit; text-decoration: none; transition: 0.2s;"
+            onmouseover="this.style.color='rgba(255,255,255,0.6)'"
+            onmouseout="this.style.color='rgba(255,255,255,0.3)'">
+            <i class="fa-solid fa-gear"></i> Manage Lists
+        </a>
+    </footer>
 
     <script>
         const statusDiv = document.getElementById('status');

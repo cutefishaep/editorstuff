@@ -56,8 +56,8 @@
                 <div class="list-header">
                     <div class="col-check"></div> <!-- Checkbox column -->
                     <div class="col-name">Name</div>
+                    <div class="col-os">Windows</div>
                     <div class="col-size">Size</div>
-                    <div class="col-os">System</div>
                 </div>
 
                 <div class="list-scroll-area" id="list-container">
@@ -68,7 +68,7 @@
                     <span id="status-text">0 selected</span>
                     <div class="actions">
                         <button class="win11-btn secondary" onclick="location.href='index.html'">Cancel</button>
-                        <button class="win11-btn primary" id="confirm-btn">Install</button>
+                        <button class="win11-btn primary" id="confirm-btn">Confirm</button>
                     </div>
                 </div>
             </div>
@@ -88,12 +88,35 @@
                     <!-- Download items -->
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" style="justify-content: space-between; align-items: center;">
+                <div class="password-container"
+                    style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary);">
+                    <span>PASS : <strong style="color: var(--text-primary);">EDITINGSTUFF</strong></span>
+                    <button class="icon-btn" id="copy-pass-btn-win" title="Copy Password"
+                        style="background:none; border:none; color: var(--accent-color); cursor: pointer; transition: color 0.2s;"><i
+                            class="fa-regular fa-clipboard"></i></button>
+                </div>
                 <button class="win11-btn secondary close-modal">Close</button>
             </div>
         </div>
     </div>
 
+    <!-- Instruction Modal -->
+    <div class="overlay" id="instruction-modal" style="display: none; z-index: 1001;">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3 id="inst-title">Installation Guide</h3>
+                <button class="close-modal-btn" onclick="closeInstruction()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="inst-content"
+                    style="white-space: pre-wrap; line-height: 1.6; font-size: 14px; color: var(--text-primary);"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="win11-btn primary" onclick="closeInstruction()">Got it</button>
+            </div>
+        </div>
+    </div>
     <div class="mobile-warning">
         <div class="warning-icon"><i class="fa-solid fa-desktop"></i></div>
         <h2>Desktop Experience Required</h2>
@@ -106,6 +129,15 @@
          Wait, I should update the JS to match these new classes or aliasing.
          Actually, I'll update the JS in the next step to match this new HTML.
     -->
+    <!-- Windows Taskbar -->
+    <div class="taskbar" id="win-taskbar">
+        <div class="taskbar-icons">
+            <div class="taskbar-icon tools" id="restore-win-btn" title="Restore Editor Stuff">
+                <i class="fa-solid fa-toolbox"></i>
+            </div>
+        </div>
+    </div>
+
     <script src="win_script.js"></script>
 </body>
 

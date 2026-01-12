@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings - Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --accent: #007AFF;
+            --accent-gradient: linear-gradient(180deg, #3294ff 0%, #007AFF 100%);
+            --sidebar-bg: rgba(30, 30, 35, 0.5);
+            --main-bg: rgba(25, 25, 30, 0.7);
+            --item-bg: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #FFFFFF;
+            --text-dim: rgba(255, 255, 255, 0.4);
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+            background: url('https://images.unsplash.com/photo-1629131726692-1accd0c53ce0?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        /* Lock Screen Style */
+        .lock-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(60px) brightness(0.5);
+            -webkit-backdrop-filter: blur(60px) brightness(0.5);
+            background: rgba(0, 0, 0, 0.4);
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+
+        .user-avatar {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+            color: white;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .login-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .login-input-container h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .pass-field {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 8px 25px;
+            color: white;
+            text-align: center;
+            width: 220px;
+            outline: none;
+            transition: all 0.3s;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+        }
+
+        .pass-field:focus {
+            background: rgba(255, 255, 255, 0.2);
+            width: 260px;
+            border-color: var(--accent);
+        }
+
+        .hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Window Style */
+        .window {
+            width: 1100px;
+            height: 750px;
+            background: var(--main-bg);
+            backdrop-filter: blur(60px) saturate(210%);
+            -webkit-backdrop-filter: blur(60px) saturate(210%);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+            display: flex;
+            overflow: hidden;
+            transition: filter 0.5s ease;
+        }
+
+        .window.locked-blur {
+            display: none !important;
+            visibility: hidden;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+        }
+
+        .traffic-lights {
+            display: flex;
+            gap: 8px;
+            padding: 10px 12px 28px;
+        }
+
+        .light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .red {
+            background: #FF5F56;
+            cursor: pointer;
+        }
+
+        .yellow {
+            background: #FFBD2E;
+        }
+
+        .green {
+            background: #27C93F;
+        }
+
+        .sidebar-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            padding: 0 12px 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .nav-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 400;
+            margin-bottom: 3px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-item[onclick="logout()"]:hover {
+            background: rgba(255, 69, 58, 0.15) !important;
+        }
+
+        .nav-item.active {
+            background: var(--accent);
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 12px;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .bg-win {
+            background: linear-gradient(180deg, #00adef, #0078d4);
+        }
+
+        .bg-mac {
+            background: linear-gradient(180deg, #666, #333);
+        }
+
+        .bg-presets {
+            background: linear-gradient(180deg, #ffb347, #ff9500);
+        }
+
+        /* Main Area */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            padding: 30px 40px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .toolbar-left h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Controls */
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 40px 40px;
+        }
+
+        /* Table */
+        .table-wrap {
+            background: var(--item-bg);
+            border-radius: 12px;
+            border: 0.5px solid var(--border);
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 18px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        td {
+            padding: 14px 18px;
+            font-size: 13px;
+            border-bottom: 0.5px solid var(--border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 12px;
+        }
+
+        .edit-btn {
+            color: var(--accent);
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .del-btn {
+            color: #FF453A;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .edit-btn:hover,
+        .del-btn:hover {
+            transform: scale(1.2);
+        }
+
+        /* Modal / Popup */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            width: 500px;
+            background: rgba(40, 40, 45, 0.95);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            padding: 0;
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 18px 25px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-row {
+            margin-bottom: 15px;
+        }
+
+        .form-row label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .form-row input,
+        .form-row select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: white;
+            font-size: 13px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .form-row input:focus {
+            border-color: var(--accent);
+        }
+
+        .modal-footer {
+            padding: 15px 25px;
+            background: rgba(255, 255, 255, 0.02);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.1s;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-danger {
+            background: rgba(255, 69, 58, 0.15);
+            color: #FF453A;
+        }
+
+        .btn:hover {
+            filter: brightness(1.2);
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Sidebar info container fix */
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 15px;
+            font-size: 11px;
+            color: var(--text-dim);
+            line-height: 1.5;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+        }
+
+        #json-preview {
+            width: 100%;
+            height: 180px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            font-family: "SF Mono", monospace;
+            font-size: 12px;
+            color: #79C0FF;
+            resize: none;
+            outline: none;
+            margin-top: 10px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--accent);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: none;
+            z-index: 10000;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        .shake {
+            animation: shake 0.2s ease-in-out 0s 2;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Lock Screen -->
+    <div id="lock-screen" class="lock-screen">
+        <div class="user-avatar"><i class="fa-solid fa-lock"></i></div>
+        <div class="login-input-container">
+            <h2>Administrator</h2>
+            <div style="position: relative; display: flex; align-items: center;">
+                <input type="password" id="admin-pass" class="pass-field" placeholder="Enter Password"
+                    onkeydown="handleLogin(event)">
+                <button onclick="handleLogin({key: 'Enter'})"
+                    style="position: absolute; right: 10px; background: none; border: none; color: white; cursor: pointer; opacity: 0.6; transition: 0.2s;"
+                    onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+                    <i class="fa-solid fa-circle-arrow-right"></i>
+                </button>
+            </div>
+            <div style="font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 10px;">Security enabled</div>
+        </div>
+    </div>
+
+    <!-- Main Window -->
+    <div class="window locked-blur" id="main-window">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="traffic-lights">
+                <div class="light red" onclick="location.href='index.html'"></div>
+                <div class="light yellow"></div>
+                <div class="light green"></div>
+            </div>
+
+            <div class="sidebar-title">Library</div>
+            <div class="nav-item active" data-type="win">
+                <i class="fa-brands fa-windows bg-win"></i>
+                <span>Windows Library</span>
+            </div>
+            <div class="nav-item" data-type="mac">
+                <i class="fa-brands fa-apple bg-mac"></i>
+                <span>macOS Library</span>
+            </div>
+            <div class="nav-item" data-type="presets">
+                <i class="fa-solid fa-sliders bg-presets"></i>
+                <span>Global Presets</span>
+            </div>
+
+            <div style="flex: 1;"></div>
+
+            <div class="nav-item" onclick="logout()" style="margin-bottom: 20px; color: #FF453A;">
+                <i class="fa-solid fa-right-from-bracket"
+                    style="background: rgba(255, 69, 58, 0.1); color: #FF453A;"></i>
+                <span>Log Out</span>
+            </div>
+
+            <div class="sidebar-footer">
+                <i class="fa-solid fa-circle-info" style="margin-right: 5px;"></i>
+                Use <b>Sync to Disk</b> to save changes permanently to your JSON files.
+            </div>
+        </div>
+
+        <!-- Main Area -->
+        <div class="main">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <h1 id="view-title">Windows Library</h1>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="openModal()" id="add-item-btn">
+                        <i class="fa-solid fa-plus"></i> Add New
+                    </button>
+                    <button class="btn btn-secondary" onclick="syncToDisk()" id="sync-btn"
+                        style="background: rgba(52, 199, 89, 0.1); color: #34c759; border: 1px solid rgba(52, 199, 89, 0.2);">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Sync to Disk
+                    </button>
+                    <button class="btn btn-secondary" onclick="copyJSON()">
+                        <i class="fa-solid fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-scroll">
+                <div id="connection-status"
+                    style="margin-bottom: 20px; padding: 10px 15px; border-radius: 8px; font-size: 11px; display: none;">
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <h3 style="margin: 0; font-size: 13px; font-weight: 600; color: var(--text-dim);">ACTIVE LIST
+                        </h3>
+                        <select id="category-filter" onchange="applyFilter()"
+                            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; font-size: 11px; padding: 2px 8px; outline: none; cursor: pointer; display: none;">
+                            <option value="ALL">All Categories</option>
+                            <option value="SOFTWARE">Software / Apps</option>
+                            <option value="PLUGIN">Plugins / Add-ons</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-danger" onclick="clearAll()"
+                        style="font-size: 11px; padding: 4px 10px; opacity: 0.6;">
+                        <i class="fa-solid fa-trash-can"></i> Clear All
+                    </button>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>OS / Info</th>
+                                <th style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-body"></tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 40px;">
+                    <div
+                        style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px;">
+                        JSON Output Preview</div>
+                    <textarea id="json-preview" readonly></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit/Add Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add New Item</h3>
+                <button onclick="closeModal()" style="background:none; border:none; color:white; cursor:pointer;"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <label>Filename</label>
+                    <input type="text" id="f-name" placeholder="e.g. Photoshop 2025">
+                </div>
+                <div class="form-row">
+                    <label>Category</label>
+                    <select id="f-category">
+                        <option value="SOFTWARE">Software (App)</option>
+                        <option value="PLUGIN">Plugin / Add-on</option>
+                        <option value="PRESET">Preset / Asset</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="f-os">System / OS Version</label>
+                    <input type="text" id="f-os" placeholder="e.g. Windows 11 / Sequoia">
+                </div>
+                <div class="form-row">
+                    <label for="f-size">File Size</label>
+                    <input type="text" id="f-size" placeholder="e.g. 1.2 GB">
+                </div>
+                <div class="form-row">
+                    <label>Download Link</label>
+                    <input type="text" id="f-link" placeholder="https://...">
+                </div>
+                <div class="form-row" id="instruction-row">
+                    <label style="display:block; margin-bottom: 5px;">Installation Instruction</label>
+                    <textarea id="f-instruction" placeholder="Enter step-by-step instructions here..."
+                        style="width: 100%; height: 80px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 10px; font-family: inherit; font-size: 12px; resize: vertical; box-sizing: border-box; outline: none; transition: border-color 0.2s;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" id="save-btn" onclick="saveItem()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">✅ Action Successful!</div>
+
+    <script>
+        const MASTER_PASS_HASH = 'd0d1b8cd954adcb5e80db4d96129f9ef1c1a5bdb5c95c74531129a02cbf87345';
+
+        async function sha256(str) {
+            const buf = new TextEncoder().encode(str);
+            const hash = await crypto.subtle.digest('SHA-256', buf);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function handleLogin(e) {
+            if (e.key === 'Enter') {
+                const pass = document.getElementById('admin-pass').value;
+                const hashed = await sha256(pass);
+                if (hashed === MASTER_PASS_HASH) {
+                    document.getElementById('lock-screen').classList.add('hidden');
+                    document.getElementById('main-window').classList.remove('locked-blur');
+                    sessionStorage.setItem('authenticated', 'true');
+                } else {
+                    const el = document.getElementById('admin-pass');
+                    el.classList.add('shake'); el.style.borderColor = '#FF453A';
+                    setTimeout(() => { el.classList.remove('shake'); el.style.borderColor = ''; }, 400);
+                }
+            }
+        }
+
+        if (sessionStorage.getItem('authenticated') === 'true') {
+            document.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('lock-screen').style.display = 'none';
+                document.getElementById('main-window').classList.remove('locked-blur');
+            });
+        }
+
+        function logout() {
+            if (confirm("Are you sure you want to log out?")) {
+                sessionStorage.removeItem('authenticated');
+                location.reload();
+            }
+        }
+
+        // State
+        let currentType = 'win';
+        let dataMap = { win: [], mac: [], presets: [] };
+        let editingIndex = -1;
+        let currentFilter = 'ALL';
+
+        const navItems = document.querySelectorAll('.nav-item');
+        const viewTitle = document.getElementById('view-title');
+        const listBody = document.getElementById('list-body');
+        const jsonPreview = document.getElementById('json-preview');
+        const overlay = document.getElementById('modal-overlay');
+        const filterSelect = document.getElementById('category-filter');
+
+        // Section-specific configurations
+        const sectionConfig = {
+            win: {
+                osLabel: 'Windows Version',
+                osPlaceholder: 'e.g. Windows 10, Windows 11, Windows Server',
+                sizeLabel: 'File Size',
+                sizePlaceholder: 'e.g. 1.2 GB',
+                categories: [
+                    { value: 'SOFTWARE', label: 'Software (Full App)' },
+                    { value: 'PLUGIN', label: 'Plugin / Extension' },
+                    { value: 'PRESET', label: 'Preset / Template' }
+                ],
+                showInstruction: true
+            },
+            mac: {
+                osLabel: 'macOS Version',
+                osPlaceholder: 'e.g. Sequoia, Sonoma, Ventura',
+                sizeLabel: 'File Size',
+                sizePlaceholder: 'e.g. 1.2 GB',
+                categories: [
+                    { value: 'SOFTWARE', label: 'Software (Full App)' },
+                    { value: 'PLUGIN', label: 'Plugin / Extension' },
+                    { value: 'PRESET', label: 'Preset / Template' }
+                ],
+                showInstruction: true
+            },
+            presets: {
+                osLabel: 'Minimum (AE Version)',
+                osPlaceholder: 'e.g. CC 2020 / v24.0',
+                sizeLabel: 'Format',
+                sizePlaceholder: 'e.g. .ffx, .aep, .prpreset',
+                categories: [
+                    { value: 'PRESET', label: 'Preset / Template' },
+                    { value: 'PACK', label: 'Asset Pack' },
+                    { value: 'TEMPLATE', label: 'Project Template' }
+                ],
+                showInstruction: false
+            }
+        };
+
+        // Logic
+        async function init() {
+            try {
+                const [win, mac, presets] = await Promise.all([
+                    fetch('list_win.json').then(r => r.json()),
+                    fetch('list_mac.json').then(r => r.json()),
+                    fetch('list_presets.json').then(r => r.json())
+                ]);
+                dataMap.win = win; dataMap.mac = mac; dataMap.presets = presets;
+
+                // Initialize filter visibility
+                if (filterSelect) {
+                    filterSelect.style.display = (currentType === 'presets') ? 'none' : 'block';
+                }
+
+                render();
+            } catch (e) {
+                const saved = localStorage.getItem('editorstuff_data');
+                if (saved) dataMap = JSON.parse(saved);
+                render();
+            }
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+                currentType = item.dataset.type;
+                viewTitle.innerText = item.querySelector('span').innerText;
+
+                // Filter dropdown logic
+                currentFilter = 'ALL';
+                if (filterSelect) {
+                    filterSelect.value = 'ALL';
+                    filterSelect.style.display = (currentType === 'presets') ? 'none' : 'block';
+                }
+
+                render();
+            });
+        });
+
+        function applyFilter() {
+            currentFilter = filterSelect.value;
+            render();
+        }
+
+        function render() {
+            const originalList = dataMap[currentType];
+            const isPreset = currentType === 'presets';
+
+            // Map original list to include indices for filtering
+            let listToRender = originalList.map((item, index) => ({ item, index }));
+
+            // Apply Category Filter if not Global Presets
+            if (!isPreset && currentFilter !== 'ALL') {
+                listToRender = listToRender.filter(entry => entry.item.category === currentFilter);
+            }
+
+            // Update table headers based on section
+            const thead = document.querySelector('table thead tr');
+            if (isPreset) {
+                thead.innerHTML = '<th>Name</th><th>Category</th><th>Min (AE)</th><th>Format</th><th style="width: 100px;">Actions</th>';
+            } else {
+                thead.innerHTML = '<th>Name</th><th>Category</th><th>OS / Info</th><th>Size</th><th style="width: 100px;">Actions</th>';
+            }
+
+            listBody.innerHTML = '';
+            listToRender.forEach(({ item, index }) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600">${item.filename}</td>
+                    <td><span style="opacity:0.6; font-size:11px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">${item.category}</span></td>
+                    <td>${item.os_min}</td>
+                    <td>${item.size || '-'}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button title="Edit" class="edit-btn" onclick="openModal(${index})"><i class="fa-solid fa-pencil"></i></button>
+                            <button title="Delete" class="del-btn" onclick="deleteItem(${index})"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </td>
+                `;
+                listBody.appendChild(tr);
+            });
+            // Update JSON preview with correctly filtered data (items only)
+            jsonPreview.value = JSON.stringify(listToRender.map(e => e.item), null, 4);
+        }
+
+        function openModal(index = -1) {
+            editingIndex = index;
+            const title = document.getElementById('modal-title');
+            const saveBtn = document.getElementById('save-btn');
+            const config = sectionConfig[currentType];
+
+            // Update OS field label and placeholder dynamically
+            const osLabel = document.querySelector('label[for="f-os"]') || document.querySelectorAll('.form-row label')[2];
+            const osInput = document.getElementById('f-os');
+            osLabel.textContent = config.osLabel;
+            osInput.placeholder = config.osPlaceholder;
+
+            // Update Size field label for presets (Format)
+            const sizeLabel = document.querySelector('label[for="f-size"]') || document.querySelectorAll('.form-row label')[3];
+            const sizeInput = document.getElementById('f-size');
+            sizeLabel.textContent = config.sizeLabel;
+            sizeInput.placeholder = config.sizePlaceholder;
+
+            // Rebuild category dropdown with section-specific options
+            const categorySelect = document.getElementById('f-category');
+            categorySelect.innerHTML = '';
+            config.categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.value;
+                option.textContent = cat.label;
+                categorySelect.appendChild(option);
+            });
+
+            // Instruction field visibility
+            const instructionRow = document.getElementById('instruction-row');
+            const catSelect = document.getElementById('f-category');
+
+            function updateInstructionVisibility() {
+                const selectedCat = catSelect.value;
+                // Instructon for Software/Plugin, not Preset/Pack/Template
+                const isInstructionTarget = (selectedCat === 'SOFTWARE' || selectedCat === 'PLUGIN');
+                instructionRow.style.display = (config.showInstruction !== false && isInstructionTarget) ? 'block' : 'none';
+            }
+
+            catSelect.onchange = updateInstructionVisibility;
+            updateInstructionVisibility();
+
+            if (index > -1) {
+                const item = dataMap[currentType][index];
+                title.innerText = "Edit Item";
+                saveBtn.innerText = "Update Item";
+                document.getElementById('f-name').value = item.filename;
+                document.getElementById('f-category').value = item.category;
+                document.getElementById('f-os').value = item.os_min;
+                document.getElementById('f-size').value = item.size;
+                document.getElementById('f-link').value = item.link1 || item.link || "";
+                document.getElementById('f-instruction').value = item.instruction || "";
+                updateInstructionVisibility();
+            } else {
+                title.innerText = "Add New Item";
+                saveBtn.innerText = "Add Item";
+                resetInputs();
+            }
+            overlay.classList.add('active');
+        }
+
+        function closeModal() {
+            overlay.classList.remove('active');
+            resetInputs();
+        }
+
+        function resetInputs() {
+            document.getElementById('f-name').value = '';
+            document.getElementById('f-os').value = '';
+            document.getElementById('f-size').value = '';
+            document.getElementById('f-link').value = '';
+            document.getElementById('f-instruction').value = '';
+            editingIndex = -1;
+        }
+
+        function saveItem() {
+            const name = document.getElementById('f-name').value;
+            const cat = document.getElementById('f-category').value;
+            const os = document.getElementById('f-os').value;
+            const size = document.getElementById('f-size').value;
+            const link = document.getElementById('f-link').value;
+            const instruction = document.getElementById('f-instruction').value;
+
+            if (!name || !link) return alert("Required: Filename & URL");
+
+            const list = dataMap[currentType];
+            const itemData = {
+                filename: name,
+                category: cat,
+                os_min: os,
+                size: size,
+                link1: link,
+                instruction: instruction
+            };
+
+            if (editingIndex > -1) {
+                list[editingIndex] = { ...list[editingIndex], ...itemData };
+            } else {
+                const nextId = list.length > 0 ? Math.max(...list.map(i => i.id)) + 1 : 1;
+                list.push({ id: nextId, ...itemData });
+            }
+
+            render();
+            closeModal();
+            localStorage.setItem('editorstuff_data', JSON.stringify(dataMap));
+            showToast("Changes saved locally");
+        }
+
+        function deleteItem(index) {
+            if (confirm("Permanently delete this item?")) {
+                dataMap[currentType].splice(index, 1);
+                render();
+                localStorage.setItem('editorstuff_data', JSON.stringify(dataMap));
+                showToast("Item deleted");
+            }
+        }
+
+        function clearAll() {
+            if (confirm("WARNING: Clear entire category list?")) {
+                dataMap[currentType] = [];
+                render();
+                localStorage.setItem('editorstuff_data', JSON.stringify(dataMap));
+            }
+        }
+
+        async function syncToDisk() {
+            const syncBtn = document.getElementById('sync-btn');
+            const original = syncBtn.innerHTML;
+            syncBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+
+            const filename = `list_${currentType}.json`;
+            const data = dataMap[currentType];
+            try {
+                const res = await fetch('/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename, data })
+                });
+                const resData = await res.json();
+                if (resData.success) {
+                    showToast("✅ Successfully synced to disk!");
+                }
+            } catch (e) {
+                alert("Sync Failed. Please ensure 'node server.js' is running in the terminal.");
+            } finally {
+                syncBtn.innerHTML = original;
+            }
+        }
+
+        function copyJSON() {
+            jsonPreview.select();
+            document.execCommand('copy');
+            showToast("JSON Copied to clipboard!");
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
+        }
+
+        init();
+        if (window.location.port == '3000') {
+            const s = document.getElementById('connection-status');
+            s.style.display = 'block'; s.style.color = '#34c759'; s.style.background = 'rgba(52,199,89,0.1)';
+            s.innerHTML = '<i class="fa-solid fa-circle-check"></i> Connected to Node.js Server';
+        } else {
+            const s = document.getElementById('connection-status');
+            s.style.display = 'block'; s.style.color = '#FF9500'; s.style.background = 'rgba(255,149,0,0.1)';
+            s.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Using file mode. Run "node server.js" to enable Sync.';
+        }
+    </script>
+</body>
+
+</html>

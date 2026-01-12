@@ -62,32 +62,85 @@
 
             <footer class="action-bar">
                 <div class="status-text"><span id="selected-count">0</span> items selected</div>
-                <button class="btn-primary" id="confirm-btn">Confirm</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-secondary" onclick="location.href='index.html'">Cancel</button>
+                    <button class="btn-primary" id="confirm-btn">Confirm</button>
+                </div>
             </footer>
         </div>
     </div>
 
     <!-- Download Window (Hidden by default) -->
-    <div class="window-container download-window" id="download-window" style="display: none;">
-        <div class="sidebar" style="width: 100%; border:none; background: transparent;">
-            <div class="traffic-lights">
-                <div class="light red" id="close-download"></div>
-                <div class="light yellow"></div>
-                <div class="light green"></div>
+    <!-- Download Window (Modal Overlay) -->
+    <div class="overlay" id="download-overlay" style="display: none;">
+        <div class="download-window" id="download-modal">
+            <!-- Header -->
+            <div class="modal-header">
+                <h3>Ready to Download</h3>
+                <div class="traffic-lights" style="margin: 0; transform: scale(0.85);">
+                    <div class="light red" id="close-download-x" style="cursor: pointer;"></div>
+                    <div class="light yellow"></div>
+                    <div class="light green"></div>
+                </div>
             </div>
-            <div style="padding: 20px;">
-                <h2 style="margin-bottom: 20px; color: var(--text-primary);">Ready to Download</h2>
-                <div id="download-list" style="display: flex; flex-direction: column; gap: 10px;">
+
+            <!-- Body -->
+            <div class="modal-body">
+                <p style="margin-top: 0; margin-bottom: 16px; color: var(--text-secondary); font-size: 13px;">
+                    The following items are ready for download:
+                </p>
+                <div id="download-list">
                     <!-- Download items go here -->
                 </div>
             </div>
+
+            <!-- Footer -->
+            <footer class="modal-footer">
+                <div class="password-container"
+                    style="display: flex; align-items: center; gap: 10px; color: var(--text-secondary); font-size: 13px;">
+                    <span>PASS : <strong style="color: var(--text-primary);">EDITINGSTUFF</strong></span>
+                    <button id="copy-pass-btn-mac" title="Copy Password"
+                        style="background:none; border:none; color: var(--text-primary); cursor: pointer; transition: color 0.2s;"><i
+                            class="fa-regular fa-clipboard"></i></button>
+                </div>
+                <button class="btn-secondary" id="close-download-btn">Close</button>
+            </footer>
         </div>
     </div>
 
+    <!-- Instruction Modal (macOS Style) -->
+    <div class="overlay" id="instruction-overlay" style="display: none; z-index: 1001;">
+        <div class="download-window" style="max-height: 85vh;">
+            <div class="modal-header">
+                <h3 id="mac-inst-title">Installation Guide</h3>
+                <div class="traffic-lights" style="margin: 0; transform: scale(0.85);">
+                    <div class="light red" onclick="closeInstruction()" style="cursor: pointer;"></div>
+                    <div class="light yellow"></div>
+                    <div class="light green"></div>
+                </div>
+            </div>
+            <div class="modal-body" style="padding: 25px;">
+                <div id="mac-inst-content"
+                    style="white-space: pre-wrap; line-height: 1.7; font-size: 14px; color: var(--text-primary); font-weight: 400;">
+                </div>
+            </div>
+            <footer class="modal-footer">
+                <div></div>
+                <button class="btn-primary" onclick="closeInstruction()">Done</button>
+            </footer>
+        </div>
+    </div>
     <div class="mobile-warning">
         <div class="warning-icon"><i class="fa-solid fa-desktop"></i></div>
         <h2>Desktop Experience Required</h2>
         <p>Please open this application on a computer/desktop with a wider screen.</p>
+    </div>
+
+    <!-- macOS Dock -->
+    <div class="dock-container" id="mac-dock">
+        <div class="dock-item" id="restore-mac-btn" title="Restore Editor Stuff">
+            <i class="fa-solid fa-toolbox"></i>
+        </div>
     </div>
 
     <script src="mac_script.js"></script>
