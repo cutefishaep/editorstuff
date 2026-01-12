@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     const listContainer = document.getElementById('list-container');
-    const selectAllCheckbox = document.getElementById('select-all');
     const selectedCountSpan = document.getElementById('selected-count');
     const menuItems = document.querySelectorAll('.sidebar .menu-item');
     const searchInput = document.getElementById('search-input');
@@ -44,63 +43,42 @@ document.addEventListener('DOMContentLoaded', () => {
         const listHeader = document.querySelector('.list-header');
         if (isPreset) {
             listHeader.innerHTML = `
-                <div class="col-checkbox"><input type="checkbox" id="select-all-header"></div>
+                <div class="col-checkbox"><input type="checkbox" id="select-all"></div>
                 <div class="col-name">Name</div>
                 <div class="col-os">Min (AE)</div>
                 <div class="col-size">Format</div>
             `;
-            // Re-bind select-all-header if needed, or just let the main select-all handle it.
-            // Actually, the main selectAllCheckbox is outside, but the header column classes might change.
-            // The original had a static select-all. Let's keep the ID but in the new structure.
-            const newSelectAll = listHeader.querySelector('#select-all-header');
-            if (newSelectAll) {
-                newSelectAll.addEventListener('change', (e) => {
-                    const isChecked = e.target.checked;
-                    const currentViewList = softwareList.filter(item => {
-                        if (searchQuery) return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
-                        return item.category === currentCategory;
-                    });
-                    currentViewList.forEach(item => item.selected = isChecked);
-                    renderList();
-                });
-                updateSelectAllState(softwareList.filter(item => {
-                    if (searchQuery) return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
-                    return item.category === currentCategory;
-                }), newSelectAll);
-            }
         } else {
             listHeader.innerHTML = `
-                <div class="col-checkbox"><input type="checkbox" id="select-all-header"></div>
+                <div class="col-checkbox"><input type="checkbox" id="select-all"></div>
                 <div class="col-name">Name</div>
                 <div class="col-os">Min OS</div>
                 <div class="col-size">Size</div>
             `;
-            const newSelectAll = listHeader.querySelector('#select-all-header');
-            if (newSelectAll) {
-                newSelectAll.addEventListener('change', (e) => {
-                    const isChecked = e.target.checked;
-                    const currentViewList = softwareList.filter(item => {
-                        if (searchQuery) return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
-                        return item.category === currentCategory;
-                    });
-                    currentViewList.forEach(item => item.selected = isChecked);
-                    renderList();
-                });
-                updateSelectAllState(softwareList.filter(item => {
-                    if (searchQuery) return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
-                    return item.category === currentCategory;
-                }), newSelectAll);
-            }
         }
 
         const filteredList = softwareList.filter(item => {
-            // Flexible Search: If query exists, search everything. If empty, respect category.
             if (searchQuery) {
                 return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
             } else {
                 return item.category === currentCategory;
             }
         });
+
+        // Re-bind Select All logic every time header is rendered
+        const selectAllBtn = document.getElementById('select-all');
+        if (selectAllBtn) {
+            const allSelected = filteredList.length > 0 && filteredList.every(i => i.selected);
+            selectAllBtn.checked = allSelected;
+            const someSelected = filteredList.some(i => i.selected);
+            selectAllBtn.indeterminate = someSelected && !allSelected;
+
+            selectAllBtn.onchange = (e) => {
+                const isChecked = e.target.checked;
+                filteredList.forEach(item => item.selected = isChecked);
+                renderList();
+            };
+        }
 
         filteredList.forEach((item) => {
             const row = document.createElement('div');
@@ -111,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <input type="checkbox" class="item-checkbox" data-id="${item.id}" ${item.selected ? 'checked' : ''}>
                 </div>
                 <div class="col-name">${item.filename}</div>
-                <!-- Category column removed as requested -->
                 <div class="col-os">${isPreset ? item.os_min : getOsDisplay(item.os_min)}</div>
                 <div class="col-size">${item.size}</div>
             `;
@@ -133,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         updateSummary();
-        updateSelectAllState(filteredList);
     }
 
     function toggleItem(id, isSelected) {
@@ -151,44 +127,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         updateSummary();
-        // Check state relative to current view (Global search or Category)
-        const filteredList = softwareList.filter(item => {
-            if (searchQuery) {
-                return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
-            } else {
-                return item.category === currentCategory;
-            }
-        });
-        updateSelectAllState(filteredList);
+        renderList(); // Re-render to update Select All state and row highlights
     }
 
     function updateSummary() {
         const count = softwareList.filter(i => i.selected).length;
         selectedCountSpan.textContent = count;
     }
-
-    function updateSelectAllState(currentViewList) {
-        const allSelected = currentViewList.length > 0 && currentViewList.every(i => i.selected);
-        selectAllCheckbox.checked = allSelected;
-
-        const someSelected = currentViewList.some(i => i.selected);
-        selectAllCheckbox.indeterminate = someSelected && !allSelected;
-    }
-
-    // Select All Logic (relative to current view)
-    selectAllCheckbox.addEventListener('change', (e) => {
-        const isChecked = e.target.checked;
-        const currentViewList = softwareList.filter(item => {
-            if (searchQuery) {
-                return item.filename.toLowerCase().includes(searchQuery.toLowerCase());
-            } else {
-                return item.category === currentCategory;
-            }
-        });
-
-        currentViewList.forEach(item => item.selected = isChecked);
-        renderList();
-    });
 
     // Sidebar Filtering Logic
     menuItems.forEach(item => {

@@ -516,6 +516,109 @@
             background: rgba(255, 255, 255, 0.15);
             border-radius: 10px;
         }
+
+        /* Toggle Switch */
+        .input-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 15px;
+            gap: 4px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 6px;
+            border: none;
+            background: none;
+            color: var(--text-dim);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.4);
+        }
+
+        /* Dropzone */
+        .dropzone {
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.02);
+            position: relative;
+        }
+
+        .dropzone:hover,
+        .dropzone.dragover {
+            border-color: var(--accent);
+            background: rgba(0, 122, 255, 0.05);
+        }
+
+        .dropzone i {
+            font-size: 30px;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .dropzone p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .file-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #34c759;
+            font-weight: 600;
+            display: none;
+        }
+
+        .hidden-el {
+            display: none !important;
+        }
+
+        /* Instruction Templates */
+        .template-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .template-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .t-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .t-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
     </style>
 </head>
 
@@ -672,12 +775,44 @@
                     <label for="f-size">File Size</label>
                     <input type="text" id="f-size" placeholder="e.g. 1.2 GB">
                 </div>
-                <div class="form-row">
-                    <label>Download Link</label>
+                <div class="form-row" id="download-mode-row" style="display: none;">
+                    <label>Download Mode</label>
+                    <div class="input-toggle">
+                        <button class="toggle-btn active" id="mode-link" onclick="setDownloadMode('link')">External
+                            Link</button>
+                        <button class="toggle-btn" id="mode-upload" onclick="setDownloadMode('upload')">Local
+                            Upload</button>
+                    </div>
+                </div>
+
+                <div class="form-row" id="link-input-group">
+                    <label id="link-label">Download Link</label>
                     <input type="text" id="f-link" placeholder="https://...">
+                </div>
+
+                <div class="form-row hidden-el" id="upload-input-group">
+                    <label>Upload File</label>
+                    <div class="dropzone" id="dropzone">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <p>Drag & Drop file here or <b>Click to Browse</b></p>
+                        <input type="file" id="f-upload" style="display:none;">
+                        <div class="file-info" id="file-info"></div>
+                    </div>
                 </div>
                 <div class="form-row" id="instruction-row">
                     <label style="display:block; margin-bottom: 5px;">Installation Instruction</label>
+                    <div id="win-templates" class="template-row" style="display:none;">
+                        <span class="template-label">Templates:</span>
+                        <button class="t-btn" onclick="applyTemplate('win', 'CEP')">CEP (Extension)</button>
+                        <button class="t-btn" onclick="applyTemplate('win', 'AEX')">AEX (Plugin)</button>
+                        <button class="t-btn" onclick="applyTemplate('win', 'FFX')">FFX (Preset)</button>
+                    </div>
+                    <div id="mac-templates" class="template-row" style="display:none;">
+                        <span class="template-label">Templates:</span>
+                        <button class="t-btn" onclick="applyTemplate('mac', 'CEP')">CEP (Extension)</button>
+                        <button class="t-btn" onclick="applyTemplate('mac', 'PLUGIN')">PLUGIN (AEX)</button>
+                        <button class="t-btn" onclick="applyTemplate('mac', 'FFX')">FFX (Preset)</button>
+                    </div>
                     <textarea id="f-instruction" placeholder="Enter step-by-step instructions here..."
                         style="width: 100%; height: 80px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 10px; font-family: inherit; font-size: 12px; resize: vertical; box-sizing: border-box; outline: none; transition: border-color 0.2s;"></textarea>
                 </div>
@@ -735,6 +870,8 @@
         let dataMap = { win: [], mac: [], presets: [] };
         let editingIndex = -1;
         let currentFilter = 'ALL';
+        let downloadMode = 'link'; // 'link' or 'upload'
+        let selectedFile = null;
 
         const navItems = document.querySelectorAll('.nav-item');
         const viewTitle = document.getElementById('view-title');
@@ -742,6 +879,62 @@
         const jsonPreview = document.getElementById('json-preview');
         const overlay = document.getElementById('modal-overlay');
         const filterSelect = document.getElementById('category-filter');
+
+        // File Selection Logic
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('f-upload');
+        const fileInfo = document.getElementById('file-info');
+
+        if (dropzone) {
+            dropzone.onclick = () => fileInput.click();
+
+            dropzone.ondragover = (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            };
+
+            dropzone.ondragleave = () => {
+                dropzone.classList.remove('dragover');
+            };
+
+            dropzone.ondrop = (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) {
+                    handleFileSelection(e.dataTransfer.files[0]);
+                }
+            };
+        }
+
+        if (fileInput) {
+            fileInput.onchange = (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelection(e.target.files[0]);
+                }
+            };
+        }
+
+        function handleFileSelection(file) {
+            selectedFile = file;
+            fileInfo.innerText = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            fileInfo.style.display = 'block';
+        }
+
+        function setDownloadMode(mode) {
+            downloadMode = mode;
+            document.getElementById('mode-link').classList.toggle('active', mode === 'link');
+            document.getElementById('mode-upload').classList.toggle('active', mode === 'upload');
+
+            document.getElementById('link-input-group').classList.toggle('hidden-el', mode === 'upload');
+            document.getElementById('upload-input-group').classList.toggle('hidden-el', mode === 'link');
+        }
+
+        function resetFormState() {
+            setDownloadMode('link');
+            selectedFile = null;
+            if (fileInfo) fileInfo.style.display = 'none';
+            if (fileInput) fileInput.value = '';
+        }
 
         // Section-specific configurations
         const sectionConfig = {
@@ -871,24 +1064,24 @@
         }
 
         function openModal(index = -1) {
+            resetInputs();
             editingIndex = index;
-            const title = document.getElementById('modal-title');
-            const saveBtn = document.getElementById('save-btn');
+            resetFormState();
+
             const config = sectionConfig[currentType];
 
-            // Update OS field label and placeholder dynamically
-            const osLabel = document.querySelector('label[for="f-os"]') || document.querySelectorAll('.form-row label')[2];
+            // Update Labels & Dynamic UI
+            const osLabel = document.querySelector('label[for="f-os"]');
             const osInput = document.getElementById('f-os');
             osLabel.textContent = config.osLabel;
             osInput.placeholder = config.osPlaceholder;
 
-            // Update Size field label for presets (Format)
-            const sizeLabel = document.querySelector('label[for="f-size"]') || document.querySelectorAll('.form-row label')[3];
+            const sizeLabel = document.querySelector('label[for="f-size"]');
             const sizeInput = document.getElementById('f-size');
             sizeLabel.textContent = config.sizeLabel;
             sizeInput.placeholder = config.sizePlaceholder;
 
-            // Rebuild category dropdown with section-specific options
+            // Rebuild category dropdown
             const categorySelect = document.getElementById('f-category');
             categorySelect.innerHTML = '';
             config.categories.forEach(cat => {
@@ -898,42 +1091,79 @@
                 categorySelect.appendChild(option);
             });
 
-            // Instruction field visibility
-            const instructionRow = document.getElementById('instruction-row');
-            const catSelect = document.getElementById('f-category');
-
-            function updateInstructionVisibility() {
-                const selectedCat = catSelect.value;
-                // Instructon for Software/Plugin, not Preset/Pack/Template
-                const isInstructionTarget = (selectedCat === 'SOFTWARE' || selectedCat === 'PLUGIN');
-                instructionRow.style.display = (config.showInstruction !== false && isInstructionTarget) ? 'block' : 'none';
-            }
-
-            catSelect.onchange = updateInstructionVisibility;
-            updateInstructionVisibility();
+            // Show Link/Upload toggle ONLY for Global Presets
+            document.getElementById('download-mode-row').style.display = (currentType === 'presets' ? 'block' : 'none');
 
             if (index > -1) {
                 const item = dataMap[currentType][index];
-                title.innerText = "Edit Item";
-                saveBtn.innerText = "Update Item";
+                document.getElementById('modal-title').innerText = "Edit Item";
                 document.getElementById('f-name').value = item.filename;
                 document.getElementById('f-category').value = item.category;
                 document.getElementById('f-os').value = item.os_min;
                 document.getElementById('f-size').value = item.size;
-                document.getElementById('f-link').value = item.link1 || item.link || "";
+
+                // NEW: Collect all linkN values and join them with a space
+                const linkSet = new Set();
+                Object.keys(item).forEach(key => {
+                    if (/^link\d*$/.test(key) && item[key]) {
+                        linkSet.add(item[key]);
+                    }
+                });
+                document.getElementById('f-link').value = Array.from(linkSet).join(' ');
+
                 document.getElementById('f-instruction').value = item.instruction || "";
-                updateInstructionVisibility();
+
+                if (currentType === 'presets' && (Array.from(linkSet)[0] || "").startsWith('/file/')) {
+                    setDownloadMode('upload');
+                    fileInfo.innerText = "Current File: " + (Array.from(linkSet)[0] || "").split('/').pop();
+                    fileInfo.style.display = 'block';
+                }
             } else {
-                title.innerText = "Add New Item";
-                saveBtn.innerText = "Add Item";
-                resetInputs();
+                document.getElementById('modal-title').innerText = "Add New Item";
             }
+
+            const instRow = document.getElementById('instruction-row');
+            if (config.showInstruction) {
+                instRow.style.display = 'block';
+                // Show relevant templates
+                document.getElementById('win-templates').style.display = (currentType === 'win' || currentType === 'presets' ? 'flex' : 'none');
+                document.getElementById('mac-templates').style.display = (currentType === 'mac' || currentType === 'presets' ? 'flex' : 'none');
+            } else {
+                instRow.style.display = 'none';
+            }
+
             overlay.classList.add('active');
+        }
+
+        const instructionTemplates = {
+            win: {
+                CEP: "1. Run the .reg file to enable Debug Mode.\n2. Copy the extension to: C:\\Program Files (x86)\\Common Files\\Adobe\\CEP\\extensions\\\n3. Restart After Effects.\n4. Window > Extensions.",
+                AEX: "1. Copy the .aex file to: C:\\Program Files\\Adobe\\Common\\Plug-ins\\7.0\\MediaCore\\\n2. Restart After Effects.",
+                FFX: "1. Copy the .ffx file to: Documents\\Adobe\\After Effects <version>\\User Presets\\\n2. Find it in the Effects & Presets panel."
+            },
+            mac: {
+                CEP: "1. Open Terminal and run: \ndefaults write com.adobe.CSXS.13 PlayerDebugMode 1\ndefaults write com.adobe.CSXS.12 PlayerDebugMode 1\ndefaults write com.adobe.CSXS.11 PlayerDebugMode 1\n2. Copy extension to: /Library/Application Support/Adobe/CEP/extensions/\n3. Restart After Effects.\n4. Window > Extensions.",
+                PLUGIN: "1. Copy the plugin to: /Library/Application Support/Adobe/Common/Plug-ins/7.0/MediaCore/\n2. Restart After Effects.",
+                FFX: "1. Copy the .ffx file to: Documents/Adobe/After Effects <version>/User Presets/\n2. Find it in the Effects & Presets panel."
+            }
+        };
+
+        function applyTemplate(os, type) {
+            const text = instructionTemplates[os][type];
+            const area = document.getElementById('f-instruction');
+            if (area.value.trim() !== "") {
+                if (confirm("Replace current instruction with template?")) {
+                    area.value = text;
+                }
+            } else {
+                area.value = text;
+            }
         }
 
         function closeModal() {
             overlay.classList.remove('active');
             resetInputs();
+            resetFormState();
         }
 
         function resetInputs() {
@@ -945,37 +1175,64 @@
             editingIndex = -1;
         }
 
-        function saveItem() {
+        async function saveItem() {
             const name = document.getElementById('f-name').value;
             const cat = document.getElementById('f-category').value;
             const os = document.getElementById('f-os').value;
             const size = document.getElementById('f-size').value;
-            const link = document.getElementById('f-link').value;
+            let link = document.getElementById('f-link').value;
             const instruction = document.getElementById('f-instruction').value;
 
-            if (!name || !link) return alert("Required: Filename & URL");
+            if (!name || !os || !size) return alert("Fill required fields");
 
-            const list = dataMap[currentType];
-            const itemData = {
+            if (currentType === 'presets' && downloadMode === 'upload' && selectedFile) {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                try {
+                    showToast("Uploading file...");
+                    const res = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const resData = await res.json();
+                    if (resData.success) {
+                        link = resData.filePath;
+                    } else {
+                        return alert("Upload failed: " + resData.message);
+                    }
+                } catch (e) {
+                    return alert("Upload error. Check console.");
+                }
+            }
+
+            // NEW: Parse multiple links separated by spaces
+            const linkArr = link.split(/\s+/).filter(l => l.trim() !== "");
+
+            const item = {
+                id: editingIndex > -1 ? dataMap[currentType][editingIndex].id : Date.now(),
                 filename: name,
                 category: cat,
                 os_min: os,
                 size: size,
-                link1: link,
                 instruction: instruction
             };
 
+            // STRICT: Dynamically add link1, link2, etc. ONLY
+            linkArr.forEach((url, i) => {
+                item[`link${i + 1}`] = url;
+            });
+
             if (editingIndex > -1) {
-                list[editingIndex] = { ...list[editingIndex], ...itemData };
+                dataMap[currentType][editingIndex] = item;
             } else {
-                const nextId = list.length > 0 ? Math.max(...list.map(i => i.id)) + 1 : 1;
-                list.push({ id: nextId, ...itemData });
+                dataMap[currentType].push(item);
             }
 
-            render();
             closeModal();
+            render();
             localStorage.setItem('editorstuff_data', JSON.stringify(dataMap));
-            showToast("Changes saved locally");
+            showToast("Item saved locally");
         }
 
         function deleteItem(index) {

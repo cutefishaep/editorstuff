@@ -4,11 +4,40 @@ const path = require('path');
 const app = express();
 const PORT = 3000;
 
+const multer = require('multer');
+
 // Middleware to parse JSON bodies
 app.use(express.json());
 
 // Serve static files from the current directory
 app.use(express.static(__dirname));
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = path.join(__dirname, 'file');
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        // Preserve original filename, but sanitize it a bit
+        const safeName = file.originalname.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+        cb(null, Date.now() + '-' + safeName);
+    }
+});
+
+const upload = multer({ storage: storage });
+
+// API Endpoint to handle file uploads
+app.post('/upload', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    const relativePath = `/file/${req.file.filename}`;
+    res.json({ success: true, filePath: relativePath });
+});
 
 // API Endpoint to save JSON files
 app.post('/save', (req, res) => {
