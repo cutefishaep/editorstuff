@@ -232,12 +232,22 @@
     },
     {
         "id": 1768216659151,
-        "filename": "Topaz Video Ai",
+        "filename": "Topaz Video Ai 4.0 [NO PLUGIN]",
         "category": "SOFTWARE",
         "os_min": "12",
         "size": "139 MB",
         "instruction": "",
         "originalName": "",
         "link1": "https://www.mediafire.com/file/wp7ap045bc5c3wl/Topaz_Video_AI_4.0.0_%255BP%255D.dmg/file"
+    },
+    {
+        "id": 1768391633584,
+        "filename": "Topaz Video Ai 4.2.2 [WITH PLUGIN]",
+        "category": "SOFTWARE",
+        "os_min": "12",
+        "size": "500 MB",
+        "instruction": "1. install the PKG files\n2. DO NOT OPEN IT\n3. Open the PATCH file and copy all of text inside of that into terminal, and enter\n4. Now you can open it",
+        "originalName": "",
+        "link1": "https://www.mediafire.com/file/o52a5hahb7omt0w/TPZ422AE.7z/file"
     }
 ]
